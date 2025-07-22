@@ -24,7 +24,7 @@ const APPSHEET_API_KEY = "V2-CcNtG-aEtuK-a4BmO-y4MAg-ZOKy2-Gua3l-vcImp-BmY0I";
 // =====================================
 // Flujo para REGISTRAR CLIENTE
 // =====================================
-const flowRegistrarCliente = addKeyword(["[]"])
+const flowRegistrarCliente = addKeyword(["[]"]) // Este flujo ahora se inicia por gotoFlow
   .addAnswer(
     "¿Cuál es tu nombre completo?",
     { capture: true },
@@ -117,7 +117,7 @@ const flowCita = addKeyword(["cita"]).addAnswer(
         await flowDynamic(
           `🔎 No encontramos un registro con el número de identificación *${cedula}*.\n\nSi deseas *registrarte*, escribe *SI*.\n\nSi el número es incorrecto y quieres intentarlo de nuevo, escribe *CORREGIR*.`
         );
-        await state.update({ debeContinuarCita: true });
+        await state.update({ debeContinuarCita: true }); // Indica que si se registra, debe ir a flowCitaContinuacion
         return gotoFlow(flowConfirmarRegistroOCorregir);
       } else {
         await state.update({ nombreCliente: cliente["Nombre Completo"] });
@@ -216,7 +216,8 @@ const flowFechaHora = addKeyword(["[]"]).addAnswer(
   { capture: true },
   async (ctx, { state, flowDynamic, gotoFlow }) => {
     const fechaHora = ctx.body.trim();
-    
+
+    // Acepta horas como 8:30, 08:30, etc.
     const regexFechaHora = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/;
     const match = fechaHora.match(regexFechaHora);
 
@@ -229,6 +230,7 @@ const flowFechaHora = addKeyword(["[]"]).addAnswer(
 
     const [_, dia, mes, anio, hora, minutos] = match;
 
+    // Normalizamos hora y minutos a 2 dígitos (08:30)
     const horaFinal = hora.padStart(2, "0");
     const minutosFinal = minutos.padStart(2, "0");
     const fechaHoraInicio = `${anio}-${mes.padStart(2, "0")}-${dia.padStart(
@@ -257,12 +259,13 @@ const flowFechaHora = addKeyword(["[]"]).addAnswer(
         { headers: { ApplicationAccessKey: APPSHEET_API_KEY } }
       );
 
+      // Obtener solo las citas del funcionario para el mismo día
       const citasFuncionario = response.data?.filter(
         (c) =>
           c.Funcionario === funcionarioId &&
           new Date(c.FechaHoraInicio).toDateString() ===
             inicioNuevaCita.toDateString() &&
-          c.Estado === "Agendada"
+          c.Estado === "Agendada" // Filtra por estado "Agendada"
       );
 
       // Verificar si hay traslapes con la nueva cita
